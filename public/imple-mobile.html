@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AR Sneaker Try-On</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: white;
+            text-align: center;
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        #camera-view {
+            width: 100%;
+            max-width: 100%;
+            background-color: #333;
+            margin: 20px 0;
+        }
+        
+        #start-camera-btn {
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        
+        #status-bar {
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Virtual Sneaker Try-On</h1>
+        <div id="status-bar">Connecting to server...</div>
+        
+        <div>
+            <button id="start-camera-btn">Start Camera</button>
+        </div>
+        
+        <video id="camera-view" autoplay playsinline></video>
+        
+        <div>
+            <button id="flip-camera-btn">Flip Camera</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.getElementById('start-camera-btn');
+            const cameraView = document.getElementById('camera-view');
+            const statusBar = document.getElementById('status-bar');
+            const flipButton = document.getElementById('flip-camera-btn');
+            let facingMode = 'environment';
+            let currentStream = null;
+            
+            // WebSocket setup
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}?mobile=true`;
+            let socket;
+            
+            function initWebSocket() {
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = () => {
+                    statusBar.textContent = 'Connected to server';
+                    socket.send(JSON.stringify({
+                        type: 'mobile-connected'
+                    }));
+                };
+                
+                socket.onclose = () => {
+                    statusBar.textContent = 'Disconnected from server';
+                    setTimeout(initWebSocket, 5000);
+                };
+                
+                socket.onerror = (error) => {
+                    statusBar.textContent = 'Connection error';
+                };
+            }
+            
+            startButton.addEventListener('click', function() {
+                statusBar.textContent = 'Requesting camera...';
+                initCamera();
+            });
+            
+            flipButton.addEventListener('click', function() {
+                facingMode = facingMode === 'environment' ? 'user' : 'environment';
+                initCamera();
+            });
+            
+            function initCamera() {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                
+                const constraints = { 
+                    audio: false,
+                    video: { 
+                        facingMode: facingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                navigator.mediaDevices.getUserMedia(constraints)
+                    .then(stream => {
+                        currentStream = stream;
+                        cameraView.srcObject = stream;
+                        statusBar.textContent = 'Camera active';
+                        
+                        // Send frames to server
+                        startSendingFrames();
+                    })
+                    .catch(error => {
+                        statusBar.textContent = 'Camera error: ' + error.message;
+                        console.error('Camera error:', error);
+                    });
+            }
+            
+            function startSendingFrames() {
+                // Create canvas for capturing frames
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 640;
+                canvas.height = 480;
+                
+                setInterval(() => {
+                    if (socket && socket.readyState === WebSocket.OPEN && currentStream) {
+                        try {
+                            context.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                            
+                            socket.send(JSON.stringify({
+                                type: 'video-frame',
+                                dataUrl: dataUrl
+                            }));
+                        } catch (error) {
+                            console.error('Error sending frame:', error);
+                        }
+                    }
+                }, 100);
+            }
+            
+            // Initialize connection
+            initWebSocket();
+        });
+    </script>
+</body>
+</html>

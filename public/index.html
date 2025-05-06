@@ -1,0 +1,71 @@
+<!-- public/index.html - Desktop interface -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Sneaker Try-On - Desktop</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Virtual Sneaker Try-On</h1>
+            <div class="connection-status" id="connection-status">Disconnected</div>
+        </div>
+        <div class="main-content">
+            <div id="preview-container">
+                <div id="mobile-stream-container">
+                    <video id="mobile-stream" autoplay playsinline></video>
+                    <canvas id="ar-canvas"></canvas>
+                    <div class="loading-overlay" id="loading-overlay">
+                        <div class="loader"></div>
+                        <p>Waiting for mobile connection...</p>
+                        <div id="qrcode"></div>
+                        <p>Scan this QR code with your mobile device</p>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="control-panel">
+                    <h2>Upload Sneaker Image</h2>
+                    <input type="file" id="sneaker-input" accept="image/*">
+                    <div id="sneaker-preview">
+                        <p>Sneaker preview will appear here</p>
+                    </div>
+                    <button id="process-btn" class="btn">Process Sneaker</button>
+                </div>
+                <div class="control-panel">
+                    <h2>Or Enter Image URL</h2>
+                    <input type="text" id="sneaker-url" placeholder="https://example.com/sneaker.jpg">
+                    <button id="load-url-btn" class="btn">Load From URL</button>
+                </div>
+                <div class="status-message" id="status-message">Ready to process sneaker image</div>
+                <div class="control-panel">
+                    <h2>Adjustments</h2>
+                    <div>
+                        <label for="size-slider">Size:</label>
+                        <input type="range" id="size-slider" min="0.5" max="1.5" step="0.1" value="1">
+                    </div>
+                    <div>
+                        <label for="position-y-slider">Height:</label>
+                        <input type="range" id="position-y-slider" min="-10" max="10" step="0.5" value="0">
+                    </div>
+                    <div>
+                        <label for="rotation-slider">Rotation:</label>
+                        <input type="range" id="rotation-slider" min="0" max="360" step="5" value="0">
+                    </div>
+                </div>
+                <div class="control-panel">
+                    <h2>Mobile Connection</h2>
+                    <p>Mobile URL: <span id="mobile-url">generating...</span></p>
+                    <p>Connect your phone to try on sneakers with your camera</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="js/desktop.js"></script>
+</body>
+</html>
